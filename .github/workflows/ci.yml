@@ -49,7 +49,7 @@ jobs:
           $unzipPath = Join-Path $tempPath "ravendb-extracted"
           if (Test-Path $unzipPath) { Remove-Item $unzipPath -Force -Recurse }
           if ($runnerOs -eq "Linux") {
-            tar -jxf $zipPath -C $unzipPath
+            tar -jxf $zipPath --directory $unzipPath
           }
           else {
             Expand-Archive $zipPath $unzipPath
