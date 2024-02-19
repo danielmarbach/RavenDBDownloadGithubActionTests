@@ -29,31 +29,35 @@ jobs:
       - name: Run a multi-line script
         shell: pwsh
         run: |
-          $runnerOs = $Env:RUNNER_OS ?? "Linux"
+          $runningOnLinux = $PSVersionTable.Platform -eq 'Unix'
           $version = "5.4.116"
           Write-Output "In Directory.Packages.props, RavenDB.Embedded is using version '$version'"
 
           $tempPath = [System.IO.Path]::GetTempPath()
           
-          $zipPath = Join-Path $tempPath "ravendb.zip"
-          $unzipPath = Join-Path $tempPath "ravendb-extracted"
+          $os = "windows"
+          $extension = "zip"
 
-          if (Test-Path $unzipPath) { Remove-Item $unzipPath -Force -Recurse }
-          New-Item -ItemType Directory -Path $unzipPath
-          
-          $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-windows-x64.zip"
           $serverPath = Join-Path $unzipPath "Server"
-          if ($runnerOs -eq "Linux") {
-            $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-linux-x64.tar.bz2"
-            $zipPath = Join-Path $tempPath "ravendb.tar.bz2"
+          if ($runningOnLinux) {
+            $os = "linux"
+            $extension = "tar.bz2"
             $serverPath = Join-Path $unzipPath "RavenDB/Server"
           }
 
+          $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-$($os)-x64.$($extension)"
+          $zipPath = Join-Path $tempPath "ravendb.$($extension)"
+
           Write-Output "Downloading RavenDB binaries from $downloadUrl to $zipPath"
           Invoke-WebRequest $downloadUrl -OutFile $zipPath
+
+          $unzipPath = Join-Path $tempPath "ravendb-extracted"
           
-          Write-Output "Unzipping archive..."
-          if ($runnerOs -eq "Linux") {
+          Write-Output "Unzipping archive to $unzipPath"
+          if (Test-Path $unzipPath) { Remove-Item $unzipPath -Force -Recurse }
+          New-Item -ItemType Directory -Path $unzipPath
+
+          if ($runningOnLinux) {
             tar -jxf $zipPath -C $unzipPath
           }
           else {
