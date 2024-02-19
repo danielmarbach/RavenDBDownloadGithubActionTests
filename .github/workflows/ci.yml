@@ -32,18 +32,18 @@ jobs:
           $runningOnLinux = $PSVersionTable.Platform -eq 'Unix'
           $version = "5.4.116"
           Write-Output "In Directory.Packages.props, RavenDB.Embedded is using version '$version'"
-
-          $tempPath = [System.IO.Path]::GetTempPath()
-          
-          $os = "windows"
-          $extension = "zip"
-
+         
           if ($runningOnLinux) {
             $os = "linux"
             $extension = "tar.bz2"
           }
+          else {
+            $os = "windows"
+            $extension = "zip"
+          }
 
           $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-$($os)-x64.$($extension)"
+          $tempPath = [System.IO.Path]::GetTempPath()
           $zipPath = Join-Path $tempPath "ravendb.$($extension)"
 
           Write-Output "Downloading RavenDB binaries from $downloadUrl to $zipPath"
