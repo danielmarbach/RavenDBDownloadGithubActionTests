@@ -48,8 +48,9 @@ jobs:
           Write-Output "Unzipping archive..."
           $unzipPath = Join-Path $tempPath "ravendb-extracted"
           if (Test-Path $unzipPath) { Remove-Item $unzipPath -Force -Recurse }
+          New-Item -ItemType Directory -Path $unzipPath
           if ($runnerOs -eq "Linux") {
-            tar -jxf $zipPath --directory $unzipPath
+            tar -jxf $zipPath -C $unzipPath
           }
           else {
             Expand-Archive $zipPath $unzipPath
