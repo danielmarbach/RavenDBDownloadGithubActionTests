@@ -38,11 +38,9 @@ jobs:
           $os = "windows"
           $extension = "zip"
 
-          $serverPath = Join-Path $unzipPath "Server"
           if ($runningOnLinux) {
             $os = "linux"
             $extension = "tar.bz2"
-            $serverPath = Join-Path $unzipPath "RavenDB/Server"
           }
 
           $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-$($os)-x64.$($extension)"
@@ -59,9 +57,11 @@ jobs:
 
           if ($runningOnLinux) {
             tar -jxf $zipPath -C $unzipPath
+            $serverPath = Join-Path $unzipPath "RavenDB/Server"
           }
           else {
             Expand-Archive $zipPath $unzipPath
+            $serverPath = Join-Path $unzipPath "Server"
           }
 
           $deployPath = Join-Path $PWD.Path deploy RavenDBServer
