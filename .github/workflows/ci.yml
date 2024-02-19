@@ -1,0 +1,61 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  ci:
+    name: ${{ matrix.os-name }}-${{ matrix.cluster-type.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2022, ubuntu-22.04]
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+      - name: Run a multi-line script
+        shell: pwsh
+        run: |
+          $runnerOs = $Env:RUNNER_OS ?? "Linux"
+          $version = "5.4.116"
+          Write-Output "In Directory.Packages.props, RavenDB.Embedded is using version '$version'"
+
+          $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-windows-x64.zip"
+          if ($runnerOs -eq "Linux") {
+            $downloadUrl = "https://daily-builds.s3.amazonaws.com/RavenDB-$($version)-linux-x64.tar.bz2"
+          }
+          $tempPath = [System.IO.Path]::GetTempPath()
+          $zipPath = Join-Path $tempPath "ravendb.zip"
+          Write-Output "Downloading RavenDB binaries from $downloadUrl to $zipPath"
+          Invoke-WebRequest $downloadUrl -OutFile $zipPath
+          
+          Write-Output "Unzipping archive..."
+          $unzipPath = Join-Path $tempPath "ravendb-extracted"
+          if (Test-Path $unzipPath) { Remove-Item $unzipPath -Force -Recurse }
+          if ($runnerOs -eq "Linux") {
+            tar xf $zipPath -C $unzipPath
+          }
+          Expand-Archive $zipPath $unzipPath
+          
+          $serverPath = Join-Path $unzipPath "Server"
+          $deployPath = Join-Path $PWD.Path deploy RavenDBServer
+          if (Test-Path $deployPath ) { Remove-Item $deployPath -Force -Recurse }
+          Write-Output "Copying '$serverPath' to '$deployPath'"
+          Copy-Item -Path $serverPath -Destination $deployPath -Recurse
+          
+          Write-Output "Deleting temporary files"
+          Remove-Item $zipPath -Force
+          Remove-Item $unzipPath -Force -Recurse
